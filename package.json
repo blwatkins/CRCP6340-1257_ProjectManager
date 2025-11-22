@@ -1,0 +1,29 @@
+{
+  "name": "crcp6340-1257_projectmanager",
+  "version": "1.0.0",
+  "description": "Brittni's implementation of the project manager for CRCP 6340; Fall 2025 term",
+  "homepage": "https://github.com/blwatkins/CRCP6340-1257_ProjectManager#readme",
+  "bugs": {
+    "url": "https://github.com/blwatkins/CRCP6340-1257_ProjectManager/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blwatkins/CRCP6340-1257_ProjectManager.git"
+  },
+  "license": "MIT",
+  "author": "brittni watkins",
+  "type": "module",
+  "main": "src/app.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@dotenvx/dotenvx": "^1.51.1",
+    "express": "^5.1.0",
+    "node-html-to-image": "^5.0.0",
+    "pinata": "^2.5.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
