@@ -31,14 +31,18 @@ const { JSDOM } = jsdom;
 const DEFAULT_HASH = Hash.getStringHash(DEFAULT_SEED_STRING);
 
 export class ProjectPreview {
-    getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
-        const projectData = JSON.parse(fs.readFileSync('build-steps/01-project-bundle/project-data.json', { encoding: 'utf8', flag: 'r' }));
+    #projectData = {};
 
+    constructor() {
+        this.#projectData = JSON.parse(fs.readFileSync('build-steps/01-project-bundle/project-data.json', { encoding: 'utf8', flag: 'r' }));
+    }
+
+    getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
         return {
             tokenHash: tokenHash,
             tokenID: tokenID,
-            projectName: projectData.name,
-            artistName: projectData.artist,
+            projectName: this.#projectData.name,
+            artistName: this.#projectData.artist,
             properties: { placeholder: 'property placeholder' },
             toData: { placeholder: 'toData placeholder' }
         };
