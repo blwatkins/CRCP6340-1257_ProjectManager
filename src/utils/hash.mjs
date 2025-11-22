@@ -20,27 +20,18 @@
  * SOFTWARE.
  */
 
-import express from 'express';
+import crypto from 'crypto';
 
-import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
-import { Hash } from './utils/hash.mjs';
-import { ProjectPreview } from './utils/project-preview.mjs';
+export class Hash {
+    static getStringHash(inputString, hashLength = 12) {
+        if (!inputString || typeof inputString !== 'string') {
+            throw new Error('Invalid input string');
+        }
 
-const APP = express();
-const PORT = Number.parseInt(process.env.PORT) || 3000;
+        if (!hashLength || typeof hashLength !== 'number' || hashLength < 1) {
+            throw new Error('Invalid hash length');
+        }
 
-APP.use(express.static('public'));
-
-APP.get('/iframe', (request, response) => {
-    let seedString = request.query.seedString || DEFAULT_SEED_STRING;
-    console.log(`seed string: ${seedString}`);
-    let hash = Hash.getStringHash(seedString);
-    console.log(`hash: ${hash}`);
-    const preview = new ProjectPreview();
-    const iframeString = preview.getIFrameString(hash);
-    response.send(iframeString);
-});
-
-APP.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
-});
+        return crypto.createHash('sha256').update(inputString).digest('hex').substring(0, hashLength);
+    }
+}

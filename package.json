@@ -24,6 +24,7 @@
   "dependencies": {
     "@dotenvx/dotenvx": "^1.51.1",
     "express": "^5.1.0",
+    "jsdom": "^27.2.0",
     "node-html-to-image": "^5.0.0",
     "pinata": "^2.5.1"
   },

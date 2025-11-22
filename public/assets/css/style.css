@@ -20,27 +20,12 @@
  * SOFTWARE.
  */
 
-import express from 'express';
+/* source: https://css-tricks.com/inheriting-box-sizing-probably-slightly-better-best-practice/ */
+html {
+    box-sizing: border-box;
+}
 
-import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
-import { Hash } from './utils/hash.mjs';
-import { ProjectPreview } from './utils/project-preview.mjs';
-
-const APP = express();
-const PORT = Number.parseInt(process.env.PORT) || 3000;
-
-APP.use(express.static('public'));
-
-APP.get('/iframe', (request, response) => {
-    let seedString = request.query.seedString || DEFAULT_SEED_STRING;
-    console.log(`seed string: ${seedString}`);
-    let hash = Hash.getStringHash(seedString);
-    console.log(`hash: ${hash}`);
-    const preview = new ProjectPreview();
-    const iframeString = preview.getIFrameString(hash);
-    response.send(iframeString);
-});
-
-APP.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
-});
+/* source: https://css-tricks.com/inheriting-box-sizing-probably-slightly-better-best-practice/ */
+*, *:before, *:after {
+    box-sizing: inherit;
+}
