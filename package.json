@@ -1,6 +1,7 @@
 {
   "name": "crcp6340-1257_projectmanager",
   "version": "1.0.0",
+  "private": true,
   "description": "Brittni's implementation of the project manager for CRCP 6340; Fall 2025 term",
   "homepage": "https://github.com/blwatkins/CRCP6340-1257_ProjectManager#readme",
   "bugs": {
@@ -15,7 +16,8 @@
   "type": "module",
   "main": "src/app.mjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.51.1",
@@ -24,6 +26,12 @@
     "pinata": "^2.5.1"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@stylistic/eslint-plugin": "^5.6.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-es-x": "^9.2.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-security": "^3.0.1",
     "nodemon": "^3.1.11"
   }
 }

@@ -20,8 +20,6 @@
  * SOFTWARE.
  */
 
-/* This configuration is designed to lint all JavaScript files in the project. */
-
 import eslint from '@eslint/js';
 
 import es_x from 'eslint-plugin-es-x';
@@ -85,6 +83,8 @@ export default [
 
             'require-atomic-updates': 'error',
 
+            'require-await': 'error',
+
             'use-isnan': ['error', {
                 enforceForSwitchCase: true,
                 enforceForIndexOf: true
@@ -144,7 +144,13 @@ export default [
                 }
             ],
 
-            '@stylistic/semi': ['error', 'always']
+            '@stylistic/semi': ['error', 'always'],
+
+            /* eslint-plugin-n */
+
+            'n/no-extraneous-import': 'error',
+
+            'n/no-missing-import': 'error'
         }
     }
 ];

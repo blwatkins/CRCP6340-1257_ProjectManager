@@ -5,3 +5,8 @@
 
 # Node
 node_modules/
+
+# environment variables
+.env
+.env.keys
+.env.*
