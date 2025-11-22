@@ -23,10 +23,8 @@
 import jsdom from 'jsdom';
 import fs from 'fs';
 
-import projectData from '../../build-steps/01-project-bundle/project-data.json' with { type: 'json' };
-
 import { DEFAULT_SEED_STRING } from './constants.mjs';
-import { Hash } from "./hash.mjs";
+import { Hash } from './hash.mjs';
 
 const { JSDOM } = jsdom;
 
@@ -34,14 +32,16 @@ const DEFAULT_HASH = Hash.getStringHash(DEFAULT_SEED_STRING);
 
 export class ProjectPreview {
     getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
+        const projectData = JSON.parse(fs.readFileSync('build-steps/01-project-bundle/project-data.json', { encoding: 'utf8', flag: 'r' }));
+
         return {
             tokenHash: tokenHash,
             tokenID: tokenID,
             projectName: projectData.name,
             artistName: projectData.artist,
             properties: { placeholder: 'property placeholder' },
-            toData: { placeholder: 'toData placeholder'}
-        }
+            toData: { placeholder: 'toData placeholder' }
+        };
     }
 
     getHashSeededRandom(minimize = false) {
