@@ -20,4 +20,13 @@
  * SOFTWARE.
  */
 
-console.log('Hello, World!');
+import express from 'express';
+
+const APP = express();
+const PORT = Number.parseInt(process.env.PORT) || 3000;
+
+APP.use(express.static('public'));
+
+APP.listen(PORT, () => {
+    console.log(`App listening on port ${PORT}`);
+});
