@@ -70,6 +70,7 @@ export class BuildSequence {
 
     async #captureThumbnailImages() {
         console.log('-- Capturing thumbnail images...');
+        const promises = [];
 
         for (let i = 0; i < this.#project.NUMBER_OF_EDITIONS; i++) {
             let tokenId = i + 1;
@@ -77,9 +78,13 @@ export class BuildSequence {
             const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
             const animationHTML = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
 
-            await this.#saveThumbnail(animationHTML, thumbnailFilePath)
-            console.log(`---- Thumbnail ${thumbnailFilePath} saved successfully.`);
+            promises.push(
+                this.#saveThumbnail(animationHTML, thumbnailFilePath)
+                    .then(() => console.log(`---- Thumbnail ${thumbnailFilePath} captured successfully.`))
+            );
         }
+
+        await Promise.all(promises);
     }
 
     async #saveThumbnail(animationHTML, thumbnailFilePath) {
