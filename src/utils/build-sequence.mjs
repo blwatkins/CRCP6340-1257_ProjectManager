@@ -23,6 +23,8 @@
 import fs from 'fs';
 import nodeHtmlToImage from 'node-html-to-image';
 
+import { PinataSDK } from 'pinata';
+
 import { Hash } from './hash.mjs';
 import { Project } from './project.mjs';
 import { SeedString } from './seed-string.mjs';
@@ -38,8 +40,9 @@ export class BuildSequence {
     }
 
     async completeBuildSequence() {
-        this.#buildAnimationFiles();
+        this.#saveAnimationFiles();
         await this.#captureThumbnailImages();
+        await this.#pinFiles();
     }
 
     #isTruthyString(input) {
@@ -54,7 +57,7 @@ export class BuildSequence {
         return `${path}/${filename}`;
     }
 
-    #buildAnimationFiles() {
+    #saveAnimationFiles() {
         console.log('-- Building animation files...');
 
         for (let i = 0; i < this.#project.NUMBER_OF_EDITIONS; i++) {
@@ -63,7 +66,7 @@ export class BuildSequence {
             const tokenId = i + 1;
             const tokenHTML = this.#project.getProjectHTML(tokenHash, tokenId);
             const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
-            fs.writeFileSync(animationFilePath, tokenHTML);
+            fs.writeFileSync(animationFilePath, tokenHTML, { encoding: 'utf8', flag: 'w' });
             console.log(`---- HTML ${animationFilePath} saved successfully.`);
         }
     }
@@ -93,5 +96,29 @@ export class BuildSequence {
             html: animationHTML,
             puppeteerArgs: { defaultViewport: { width: 1080, height: 1080 } }
         });
+    }
+
+    async #pinFiles() {
+        console.log('-- Pinning animation files and thumnail images...');
+        const pinata = new PinataSDK({
+            pinataGateway: process.env.PINATA_GATEWAY,
+            pinataJwt: process.env.PINATA_JWT
+        });
+
+        for (let i = 0; i < this.#project.NUMBER_OF_EDITIONS; i++) {
+            const tokenId = i + 1;
+            const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
+            const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
+
+            const html = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
+            const file = new File([html], `${tokenId}.html`, { type: 'text/html' });
+            const upload = await pinata.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
+
+            // TODO - store file upload in promise array
+            // TODO - store file IPFS hash mapping to token ID
+            // TODO - output file IPFS url from gateway and ipfs.io/ipfs
+
+            // TODO - upload thumbnail image to IPFS
+        }
     }
 }
