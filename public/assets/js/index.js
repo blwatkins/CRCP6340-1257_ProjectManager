@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-"use strict";
+'use strict';
 
 (() => {
     const SEED_STRING_ID = 'current-seed-string';
@@ -49,7 +49,7 @@
         const seedString = generateSeedString();
         const seedStringElement = document.getElementById(SEED_STRING_ID);
 
-        if (seedStringElement)  {
+        if (seedStringElement) {
             seedStringElement.innerText = seedString;
             updateIFrameSource(seedString);
         }

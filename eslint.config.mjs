@@ -69,6 +69,8 @@ export default [
 
             'no-template-curly-in-string': 'error',
 
+            'no-undef': 'off',
+
             'no-unmodified-loop-condition': 'error',
 
             'no-unreachable-loop': 'error',
