@@ -40,12 +40,12 @@ APP.get('/iframe', (request, response) => {
     response.send(iframeString);
 });
 
-APP.post('/build-sequence', (request, response) => {
+APP.post('/build-sequence', async (request, response) => {
     console.log('Build sequence initiated.');
     const build = new BuildSequence();
 
     try {
-        build.completeBuildSequence();
+        await build.completeBuildSequence();
         console.log('Build sequence complete!');
         response.send({ result: 'Build sequence complete!' });
     } catch (error) {

@@ -21,6 +21,7 @@
  */
 
 import fs from 'fs';
+import nodeHtmlToImage from 'node-html-to-image';
 
 import { Hash } from './hash.mjs';
 import { Project } from './project.mjs';
@@ -28,6 +29,7 @@ import { SeedString } from './seed-string.mjs';
 
 export class BuildSequence {
     #BUILD_ANIMATION_FILES_PATH = 'build-steps/02-animation-files';
+    #THUMBNAIL_IMAGES_PATH = 'build-steps/03-thumbnail-images';
 
     #project;
 
@@ -35,8 +37,9 @@ export class BuildSequence {
         this.#project = new Project();
     }
 
-    completeBuildSequence() {
+    async completeBuildSequence() {
         this.#buildAnimationFiles();
+        await this.#captureThumbnailImages();
     }
 
     #isTruthyString(input) {
@@ -63,5 +66,27 @@ export class BuildSequence {
             fs.writeFileSync(animationFilePath, tokenHTML);
             console.log(`---- HTML ${animationFilePath} saved successfully.`);
         }
+    }
+
+    async #captureThumbnailImages() {
+        console.log('-- Capturing thumbnail images...');
+
+        for (let i = 0; i < this.#project.NUMBER_OF_EDITIONS; i++) {
+            let tokenId = i + 1;
+            const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
+            const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
+            const animationHTML = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
+
+            await this.#saveThumbnail(animationHTML, thumbnailFilePath)
+            console.log(`---- Thumbnail ${thumbnailFilePath} saved successfully.`);
+        }
+    }
+
+    async #saveThumbnail(animationHTML, thumbnailFilePath) {
+        await nodeHtmlToImage({
+            output: thumbnailFilePath,
+            html: animationHTML,
+            puppeteerArgs: { defaultViewport: { width: 1080, height: 1080 } }
+        });
     }
 }
