@@ -58,15 +58,16 @@ export class ProjectPreview {
     #loadProjectData() {
         try {
             this.#projectData = JSON.parse(
-                fs.readFileSync(this.#buildPath(this.#PROJECT_DATA_FILENAME),
-                { encoding: 'utf8', flag: 'r' }
-            ));
+                fs.readFileSync(
+                    this.#buildPath(this.#PROJECT_DATA_FILENAME),
+                    { encoding: 'utf8', flag: 'r' }
+                ));
         } catch (error) {
             console.error('Error reading project data file:', error);
 
             this.#projectData = {
                 name: 'Default Project Name',
-                artist: 'Default Artist Name',
+                artist: 'Default Artist Name'
             };
         }
     }
