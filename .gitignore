@@ -13,3 +13,6 @@ node_modules/
 
 # project source code
 build-steps/01-project-bundle/main.js
+
+# project build sequence
+build-steps/02-animation-files/*

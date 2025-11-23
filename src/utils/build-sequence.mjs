@@ -20,21 +20,48 @@
  * SOFTWARE.
  */
 
-export class BuildSequence {
-    constructor() {
+import fs from 'fs';
 
+import { Hash } from './hash.mjs';
+import { Project } from './project.mjs';
+import { SeedString } from './seed-string.mjs';
+
+export class BuildSequence {
+    #BUILD_ANIMATION_FILES_PATH = 'build-steps/02-animation-files';
+
+    #project;
+
+    constructor() {
+        this.#project = new Project();
     }
 
     completeBuildSequence() {
-        let sequence = [this.#buildAnimationFiles];
+        this.#buildAnimationFiles();
+    }
 
-        for (const fn of sequence) {
-            fn();
+    #isTruthyString(input) {
+        return input && typeof input === 'string' && input.trim().length > 0;
+    }
+
+    #buildPath(path, filename) {
+        if (!this.#isTruthyString(filename) || !this.#isTruthyString(path)) {
+            throw new Error('Invalid path or filename');
         }
+
+        return `${path}/${filename}`;
     }
 
     #buildAnimationFiles() {
         console.log('-- Building animation files...');
-        console.log();
+
+        for (let i = 0; i < this.#project.NUMBER_OF_EDITIONS; i++) {
+            const tokenSeedString = SeedString.generateSeedString();
+            const tokenHash = Hash.getStringHash(tokenSeedString);
+            const tokenId = i + 1;
+            const tokenHTML = this.#project.getProjectHTML(tokenHash, tokenId);
+            const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
+            fs.writeFileSync(animationFilePath, tokenHTML);
+            console.log(`---- HTML ${animationFilePath} saved successfully.`);
+        }
     }
 }

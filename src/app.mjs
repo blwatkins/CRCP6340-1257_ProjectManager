@@ -22,10 +22,10 @@
 
 import express from 'express';
 
-import { BuildSequence } from './utils/build-sequence.js';
+import { BuildSequence } from './utils/build-sequence.mjs';
 import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
 import { Hash } from './utils/hash.mjs';
-import { ProjectPreview } from './utils/project-preview.mjs';
+import { Project } from './utils/project.mjs';
 
 const APP = express();
 const PORT = Number.parseInt(process.env.PORT) || 3000;
@@ -35,17 +35,23 @@ APP.use(express.static('public'));
 APP.get('/iframe', (request, response) => {
     let seedString = request.query.seedString || DEFAULT_SEED_STRING;
     let hash = Hash.getStringHash(seedString);
-    const preview = new ProjectPreview();
-    const iframeString = preview.getIFrameString(hash);
+    const preview = new Project();
+    const iframeString = preview.getProjectHTML(hash);
     response.send(iframeString);
 });
 
 APP.post('/build-sequence', (request, response) => {
     console.log('Build sequence initiated.');
     const build = new BuildSequence();
-    build.completeBuildSequence();
-    console.log('Build sequence complete!');
-    response.send({ result: 'Build sequence complete!' });
+
+    try {
+        build.completeBuildSequence();
+        console.log('Build sequence complete!');
+        response.send({ result: 'Build sequence complete!' });
+    } catch (error) {
+        console.error('Error during build sequence:', error);
+        response.status(500).send({ result: 'Build sequence error.' });
+    }
 });
 
 APP.listen(PORT, () => {

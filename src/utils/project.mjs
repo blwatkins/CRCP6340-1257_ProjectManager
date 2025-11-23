@@ -30,7 +30,7 @@ const { JSDOM } = jsdom;
 
 const DEFAULT_HASH = Hash.getStringHash(DEFAULT_SEED_STRING);
 
-export class ProjectPreview {
+export class Project {
     #PROJECT_BUNDLE_DIR = 'build-steps/01-project-bundle';
     #PROJECT_DATA_FILENAME = 'project-data.json';
     #PROJECT_STYLESHEET_FILENAME = 'style.css';
@@ -41,6 +41,11 @@ export class ProjectPreview {
 
     constructor() {
         this.#loadProjectData();
+    }
+
+    get NUMBER_OF_EDITIONS() {
+        // TODO - read from project metadata
+        return 10;
     }
 
     #isTruthyString(input) {
@@ -131,10 +136,13 @@ export class ProjectPreview {
         return content;
     }
 
-    getIFrameString(tokenHash = DEFAULT_HASH) {
+    getProjectHTML(tokenHash = DEFAULT_HASH, tokenId = -1) {
         const DOM = new JSDOM();
         const document = DOM.window.document;
-        document.head.title = this.#projectData.name;
+
+        const title = document.createElement('title');
+        title.textContent = this.#projectData.name;
+        document.head.appendChild(title);
 
         const style = document.createElement('style');
         style.textContent = this.#getProjectStylesheet(true);
@@ -142,7 +150,7 @@ export class ProjectPreview {
 
         const tokenDataScript = document.createElement('script');
         tokenDataScript.id = 'token-data';
-        tokenDataScript.text = `const TOKEN_DATA = ${JSON.stringify(this.#getTokenData(tokenHash))};`;
+        tokenDataScript.text = `const TOKEN_DATA = ${JSON.stringify(this.#getTokenData(tokenHash, tokenId))};`;
         document.body.appendChild(tokenDataScript);
 
         const hashSeededRandomScript = document.createElement('script');
