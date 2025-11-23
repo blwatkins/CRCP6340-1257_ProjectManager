@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import jsdom from 'jsdom';
 import fs from 'fs';
+import jsdom from 'jsdom';
 
 import { DEFAULT_SEED_STRING } from './constants.mjs';
 import { Hash } from './hash.mjs';
@@ -31,13 +31,65 @@ const { JSDOM } = jsdom;
 const DEFAULT_HASH = Hash.getStringHash(DEFAULT_SEED_STRING);
 
 export class ProjectPreview {
+    #PROJECT_BUNDLE_DIR = 'build-steps/01-project-bundle';
+    #PROJECT_DATA_FILENAME = 'project-data.json';
+    #PROJECT_STYLESHEET_FILENAME = 'style.css';
+    #HASH_SEEDED_RANDOM_FILENAME = 'hash-seeded-random.js';
+    #PROJECT_BUNDLE_FILENAME = 'main.js';
+
     #projectData = {};
 
     constructor() {
-        this.#projectData = JSON.parse(fs.readFileSync('build-steps/01-project-bundle/project-data.json', { encoding: 'utf8', flag: 'r' }));
+        this.#loadProjectData();
     }
 
-    getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
+    #isTruthyString(input) {
+        return input && typeof input === 'string' && input.trim().length > 0;
+    }
+
+    #buildPath(filename) {
+        if (!this.#isTruthyString(filename) || !this.#isTruthyString(this.#PROJECT_BUNDLE_DIR)) {
+            throw new Error('Invalid project bundle directory or filename');
+        }
+
+        return `${this.#PROJECT_BUNDLE_DIR}/${filename}`;
+    }
+
+    #loadProjectData() {
+        try {
+            this.#projectData = JSON.parse(
+                fs.readFileSync(this.#buildPath(this.#PROJECT_DATA_FILENAME),
+                { encoding: 'utf8', flag: 'r' }
+            ));
+        } catch (error) {
+            console.error('Error reading project data file:', error);
+
+            this.#projectData = {
+                name: 'Default Project Name',
+                artist: 'Default Artist Name',
+            };
+        }
+    }
+
+    #getProjectStylesheet(minimize = false) {
+        let content = '';
+
+        try {
+            const fileContents = fs.readFileSync(this.#buildPath(this.#PROJECT_STYLESHEET_FILENAME), { encoding: 'utf8', flag: 'r' });
+
+            if (minimize) {
+                content = fileContents.split('\n').map(line => line.trim()).join(' ');
+            } else {
+                content = fileContents;
+            }
+        } catch (error) {
+            console.error('Error reading file:', error);
+        }
+
+        return content;
+    }
+
+    #getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
         return {
             tokenHash: tokenHash,
             tokenID: tokenID,
@@ -48,16 +100,29 @@ export class ProjectPreview {
         };
     }
 
-    getHashSeededRandom(minimize = false) {
+    #getHashSeededRandomScript(minimize = false) {
         let content = '';
 
         try {
-            const fileContents = fs.readFileSync('build-steps/01-project-bundle/hash-seeded-random.js', { encoding: 'utf8', flag: 'r' });
-            content = fileContents;
+            const fileContents = fs.readFileSync(this.#buildPath(this.#HASH_SEEDED_RANDOM_FILENAME), { encoding: 'utf8', flag: 'r' });
 
             if (minimize) {
                 content = fileContents.split('\n').map(line => line.trim()).join(' ');
+            } else {
+                content = fileContents;
             }
+        } catch (error) {
+            console.error('Error reading file:', error);
+        }
+
+        return content;
+    }
+
+    #getProjectBundle() {
+        let content = '';
+
+        try {
+            content = fs.readFileSync(this.#buildPath(this.#PROJECT_BUNDLE_FILENAME), { encoding: 'utf8', flag: 'r' });
         } catch (error) {
             console.error('Error reading file:', error);
         }
@@ -68,18 +133,26 @@ export class ProjectPreview {
     getIFrameString(tokenHash = DEFAULT_HASH) {
         const DOM = new JSDOM();
         const document = DOM.window.document;
-        document.head.title = 'TEST IFRAME TITLE';
-        document.body.innerHTML = '<h1>TEST IFRAME</h1>';
+        document.head.title = this.#projectData.name;
+
+        const style = document.createElement('style');
+        style.textContent = this.#getProjectStylesheet(true);
+        document.head.appendChild(style);
 
         const tokenDataScript = document.createElement('script');
         tokenDataScript.id = 'token-data';
-        tokenDataScript.text = `const TOKEN_DATA = ${JSON.stringify(this.getTokenData(tokenHash))};`;
+        tokenDataScript.text = `const TOKEN_DATA = ${JSON.stringify(this.#getTokenData(tokenHash))};`;
         document.body.appendChild(tokenDataScript);
 
         const hashSeededRandomScript = document.createElement('script');
         hashSeededRandomScript.id = 'hash-seeded-random';
-        hashSeededRandomScript.text = this.getHashSeededRandom(true);
+        hashSeededRandomScript.text = this.#getHashSeededRandomScript(true);
         document.body.appendChild(hashSeededRandomScript);
+
+        const projectBundleScript = document.createElement('script');
+        projectBundleScript.id = 'project-bundle';
+        projectBundleScript.text = this.#getProjectBundle();
+        document.body.appendChild(projectBundleScript);
 
         return DOM.serialize();
     }

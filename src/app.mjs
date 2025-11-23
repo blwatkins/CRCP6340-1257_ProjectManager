@@ -33,9 +33,7 @@ APP.use(express.static('public'));
 
 APP.get('/iframe', (request, response) => {
     let seedString = request.query.seedString || DEFAULT_SEED_STRING;
-    console.log(`seed string: ${seedString}`);
     let hash = Hash.getStringHash(seedString);
-    console.log(`hash: ${hash}`);
     const preview = new ProjectPreview();
     const iframeString = preview.getIFrameString(hash);
     response.send(iframeString);
