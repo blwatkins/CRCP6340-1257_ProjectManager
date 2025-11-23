@@ -156,6 +156,11 @@ export default [
 
             'n/no-missing-import': 'error',
 
+            'n/no-unsupported-features/node-builtins': ['error', {
+                version: '>=22.0.0',
+                ignores: []
+            }],
+
             /* eslint-plugin-security */
 
             'security/detect-non-literal-fs-filename': 'off'

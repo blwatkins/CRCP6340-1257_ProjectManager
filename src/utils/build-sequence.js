@@ -20,34 +20,21 @@
  * SOFTWARE.
  */
 
-import express from 'express';
+export class BuildSequence {
+    constructor() {
 
-import { BuildSequence } from './utils/build-sequence.js';
-import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
-import { Hash } from './utils/hash.mjs';
-import { ProjectPreview } from './utils/project-preview.mjs';
+    }
 
-const APP = express();
-const PORT = Number.parseInt(process.env.PORT) || 3000;
+    completeBuildSequence() {
+        let sequence = [this.#buildAnimationFiles];
 
-APP.use(express.static('public'));
+        for (const fn of sequence) {
+            fn();
+        }
+    }
 
-APP.get('/iframe', (request, response) => {
-    let seedString = request.query.seedString || DEFAULT_SEED_STRING;
-    let hash = Hash.getStringHash(seedString);
-    const preview = new ProjectPreview();
-    const iframeString = preview.getIFrameString(hash);
-    response.send(iframeString);
-});
-
-APP.post('/build-sequence', (request, response) => {
-    console.log('Build sequence initiated.');
-    const build = new BuildSequence();
-    build.completeBuildSequence();
-    console.log('Build sequence complete!');
-    response.send({ result: 'Build sequence complete!' });
-});
-
-APP.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
-});
+    #buildAnimationFiles() {
+        console.log('-- Building animation files...');
+        console.log();
+    }
+}

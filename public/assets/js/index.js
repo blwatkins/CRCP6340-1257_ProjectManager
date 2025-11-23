@@ -27,6 +27,8 @@
     const KEEP_SEED_STRING_ID = 'keep-seed-string';
     const NEW_SEED_STRING_ID = 'new-seed-string';
     const PROJECT_PREVIEW_FRAME_ID = 'project-preview-frame';
+    const BUILD_SEQUENCE_BUTTON_ID = 'build-sequence-button';
+    const BUILD_SEQUENCE_STATUS_ID = 'build-sequence-status';
 
     function updateIFrameSource(seedString) {
         let frameSource = '/iframe';
@@ -75,9 +77,54 @@
         }
     }
 
+    function launchBuildSequence() {
+        const buildSequenceButton = document.getElementById(BUILD_SEQUENCE_BUTTON_ID);
+        const buildSequenceStatus = document.getElementById(BUILD_SEQUENCE_STATUS_ID);
+
+        if (buildSequenceButton) {
+            buildSequenceButton.disabled = true;
+        }
+
+        if (buildSequenceStatus) {
+            buildSequenceStatus.innerText = 'Building Project...';
+        }
+
+        fetch('/build-sequence', { method: 'POST' })
+            .then((response) => {
+                if (response.ok) {
+                    response.json()
+                        .then((data) => {
+                            if (buildSequenceStatus) {
+                                buildSequenceStatus.innerText = data.result;
+                                buildSequenceStatus.classList.add('text-success');
+                            }
+                        });
+                } else {
+                    if (buildSequenceStatus) {
+                        buildSequenceStatus.innerText = 'Build sequence failed.';
+                        buildSequenceStatus.classList.add('text-danger');
+                    }
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                buildSequenceStatus.innerText = 'Build sequence error.';
+                buildSequenceStatus.classList.add('text-danger');
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    buildSequenceStatus.innerText = '';
+                    buildSequenceStatus.classList.remove('text-danger');
+                    buildSequenceStatus.classList.remove('text-success');
+                    buildSequenceButton.disabled = false;
+                }, 10_000);
+            });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const keepSeedStringButton = document.getElementById(KEEP_SEED_STRING_ID);
         const newSeedStringButton = document.getElementById(NEW_SEED_STRING_ID);
+        const buildSequenceButton = document.getElementById(BUILD_SEQUENCE_BUTTON_ID);
 
         if (keepSeedStringButton) {
             keepSeedStringButton.addEventListener('click', () => {
@@ -93,6 +140,14 @@
             });
 
             newSeedStringButton.disabled = false;
+        }
+
+        if (buildSequenceButton) {
+            buildSequenceButton.addEventListener('click', () => {
+                launchBuildSequence();
+            });
+
+            buildSequenceButton.disabled = false;
         }
     });
 })();
