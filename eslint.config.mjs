@@ -163,7 +163,9 @@ export default [
 
             /* eslint-plugin-security */
 
-            'security/detect-non-literal-fs-filename': 'off'
+            'security/detect-non-literal-fs-filename': 'off',
+
+            'security/detect-object-injection': 'off'
         }
     },
     globalIgnores([
