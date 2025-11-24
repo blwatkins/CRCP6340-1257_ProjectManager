@@ -24,7 +24,7 @@ import fs from 'fs';
 import jsdom from 'jsdom';
 
 import { minify as cssMinify } from 'csso';
-import { minify } from 'terser';
+import { minify as jsMinify } from 'terser';
 
 import { DEFAULT_SEED_STRING } from './constants.mjs';
 import { Hash } from './hash.mjs';
@@ -106,18 +106,14 @@ export class Project {
         );
     }
 
-    #getProjectStylesheet(minimize = false) {
-        let content;
+    #getProjectStylesheet(minify = false) {
         const fileContents = fs.readFileSync(this.#buildPath(this.#PROJECT_STYLESHEET_FILENAME), { encoding: 'utf8', flag: 'r' });
 
-        if (minimize) {
-            const minified = cssMinify(fileContents);
-            content = minified.css;
+        if (minify) {
+            return cssMinify(fileContents).css;
         } else {
-            content = fileContents;
+            return fileContents;
         }
-
-        return content;
     }
 
     #getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
@@ -131,18 +127,14 @@ export class Project {
         };
     }
 
-    async #getHashSeededRandomScript(minimize = false) {
-        let content;
+    async #getHashSeededRandomScript(minify = false) {
         const fileContents = fs.readFileSync(this.#buildPath(this.#HASH_SEEDED_RANDOM_FILENAME), { encoding: 'utf8', flag: 'r' });
 
-        if (minimize) {
-            const minified = await minify(fileContents);
-            content = minified.code;
+        if (minify) {
+            return await jsMinify(fileContents).code;
         } else {
-            content = fileContents;
+            return fileContents;
         }
-
-        return content;
     }
 
     #getProjectBundle() {

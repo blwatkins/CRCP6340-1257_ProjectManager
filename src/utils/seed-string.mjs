@@ -26,16 +26,17 @@ export class SeedString {
     static generateSeedString(length = 20) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
-        // Remove modulo bias: use rejection sampling for secure uniform selection
         let generated = 0;
+
         while (generated < length) {
             const byte = crypto.randomBytes(1)[0];
             if (byte >= Math.floor(256 / alphabet.length) * alphabet.length) {
-                continue; // reject; prevents bias
+                continue;
             }
             seedString += alphabet.charAt(byte % alphabet.length);
             generated++;
         }
+
         return seedString;
     }
 }
