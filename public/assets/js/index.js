@@ -1,0 +1,170 @@
+/*
+ * Copyright (C) 2025 brittni watkins.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+'use strict';
+
+(() => {
+    const SEED_STRING_ID = 'current-seed-string';
+    const KEEP_SEED_STRING_ID = 'keep-seed-string';
+    const NEW_SEED_STRING_ID = 'new-seed-string';
+    const PROJECT_PREVIEW_FRAME_ID = 'project-preview-frame';
+    const BUILD_SEQUENCE_BUTTON_ID = 'build-sequence-button';
+    const BUILD_SEQUENCE_STATUS_ID = 'build-sequence-status';
+    const STATUS_DISPLAY_DURATION_MS = 10_000;
+
+    function updateIFrameSource(seedString) {
+        let frameSource = '/iframe';
+
+        if (seedString && typeof seedString === 'string' && seedString.trim().length > 0) {
+            const urlParams = new URLSearchParams();
+            urlParams.set('seedString', seedString);
+
+            frameSource += `?${urlParams.toString()}`;
+        }
+
+        const iframe = document.getElementById(PROJECT_PREVIEW_FRAME_ID);
+
+        if (iframe) {
+            iframe.src = frameSource;
+        }
+    }
+
+    function newSeedString() {
+        const seedString = generateSeedString();
+        const seedStringElement = document.getElementById(SEED_STRING_ID);
+
+        if (seedStringElement) {
+            seedStringElement.innerText = seedString;
+            updateIFrameSource(seedString);
+        }
+    }
+
+    function generateSeedString() {
+        const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let seedString = '';
+        const length = 20;
+        const maxValidByte = (Math.floor(256 / alphabet.length) * alphabet.length) - 1;
+
+        while (seedString.length < length) {
+            const randomValues = new Uint8Array(length - seedString.length);
+            window.crypto.getRandomValues(randomValues);
+
+            for (let i = 0; i < randomValues.length && seedString.length < length; i++) {
+                if (randomValues[i] <= maxValidByte) {
+                    seedString += alphabet.charAt(randomValues[i] % alphabet.length);
+                }
+            }
+        }
+
+        return seedString;
+    }
+
+    function refreshSeedString() {
+        const seedStringElement = document.getElementById(SEED_STRING_ID);
+
+        if (seedStringElement) {
+            const seedString = seedStringElement.innerText;
+            updateIFrameSource(seedString);
+        }
+    }
+
+    function launchBuildSequence() {
+        const buildSequenceButton = document.getElementById(BUILD_SEQUENCE_BUTTON_ID);
+        const buildSequenceStatus = document.getElementById(BUILD_SEQUENCE_STATUS_ID);
+
+        if (buildSequenceButton) {
+            buildSequenceButton.disabled = true;
+        }
+
+        if (buildSequenceStatus) {
+            buildSequenceStatus.innerText = 'Building Project...';
+        }
+
+        fetch('/build-sequence', { method: 'POST' })
+            .then((response) => {
+                if (response.ok) {
+                    response.json()
+                        .then((data) => {
+                            if (buildSequenceStatus && data.success) {
+                                buildSequenceStatus.innerText = data.message;
+                                buildSequenceStatus.classList.add('text-success');
+                            }
+                        });
+                } else {
+                    if (buildSequenceStatus) {
+                        buildSequenceStatus.innerText = 'Build sequence failed.';
+                        buildSequenceStatus.classList.add('text-danger');
+                    }
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                if (buildSequenceStatus) {
+                    buildSequenceStatus.innerText = 'Build sequence error.';
+                    buildSequenceStatus.classList.add('text-danger');
+                }
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    if (buildSequenceStatus) {
+                        buildSequenceStatus.innerText = '';
+                        buildSequenceStatus.classList.remove('text-danger');
+                        buildSequenceStatus.classList.remove('text-success');
+                    }
+
+                    if (buildSequenceButton) {
+                        buildSequenceButton.disabled = false;
+                    }
+                }, STATUS_DISPLAY_DURATION_MS);
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const keepSeedStringButton = document.getElementById(KEEP_SEED_STRING_ID);
+        const newSeedStringButton = document.getElementById(NEW_SEED_STRING_ID);
+        const buildSequenceButton = document.getElementById(BUILD_SEQUENCE_BUTTON_ID);
+
+        if (keepSeedStringButton) {
+            keepSeedStringButton.addEventListener('click', () => {
+                refreshSeedString();
+            });
+
+            keepSeedStringButton.disabled = false;
+        }
+
+        if (newSeedStringButton) {
+            newSeedStringButton.addEventListener('click', () => {
+                newSeedString();
+            });
+
+            newSeedStringButton.disabled = false;
+        }
+
+        if (buildSequenceButton) {
+            buildSequenceButton.addEventListener('click', () => {
+                launchBuildSequence();
+            });
+
+            buildSequenceButton.disabled = false;
+        }
+    });
+})();

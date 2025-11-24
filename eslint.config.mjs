@@ -28,6 +28,8 @@ import security from 'eslint-plugin-security';
 
 import stylistic from '@stylistic/eslint-plugin';
 
+import { globalIgnores } from 'eslint/config';
+
 export default [
     eslint.configs.recommended,
     es_x.configs['flat/restrict-to-es2023'],
@@ -66,6 +68,8 @@ export default [
             'no-self-compare': 'error',
 
             'no-template-curly-in-string': 'error',
+
+            'no-undef': 'off',
 
             'no-unmodified-loop-condition': 'error',
 
@@ -150,7 +154,21 @@ export default [
 
             'n/no-extraneous-import': 'error',
 
-            'n/no-missing-import': 'error'
+            'n/no-missing-import': 'error',
+
+            'n/no-unsupported-features/node-builtins': ['error', {
+                version: '>=22.0.0',
+                ignores: []
+            }],
+
+            /* eslint-plugin-security */
+
+            'security/detect-non-literal-fs-filename': 'off',
+
+            'security/detect-object-injection': 'off'
         }
-    }
+    },
+    globalIgnores([
+        'build-steps/**/*'
+    ])
 ];

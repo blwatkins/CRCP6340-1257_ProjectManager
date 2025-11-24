@@ -20,4 +20,48 @@
  * SOFTWARE.
  */
 
-console.log('Hello, World!');
+import express from 'express';
+
+import { BuildSequence } from './utils/build-sequence.mjs';
+import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
+import { Hash } from './utils/hash.mjs';
+import { Project } from './utils/project.mjs';
+import { isTruthyString } from './utils/utils.mjs';
+
+const APP = express();
+const PORT = Number.parseInt(process.env.PORT) || 3000;
+
+APP.use(express.static('public'));
+
+APP.get('/iframe', async (request, response) => {
+    let seedString;
+
+    if (isTruthyString(request.query.seedString) && request.query.seedString.length <= 64) {
+        seedString = request.query.seedString;
+    } else {
+        seedString = DEFAULT_SEED_STRING;
+    }
+
+    let hash = Hash.getStringHash(seedString);
+    const preview = new Project();
+    const iframeString = await preview.getProjectHTML(hash);
+    response.send(iframeString);
+});
+
+APP.post('/build-sequence', async (request, response) => {
+    console.log('Build sequence initiated.');
+    const build = new BuildSequence();
+
+    try {
+        await build.completeBuildSequence();
+        console.log('Build sequence complete!');
+        response.send({ success: true, message: 'Build sequence complete!' });
+    } catch (error) {
+        console.error('Error during build sequence:', error);
+        response.status(500).send({ success: false, message: 'Build sequence error.' });
+    }
+});
+
+APP.listen(PORT, () => {
+    console.log(`App listening on port ${PORT}`);
+});
