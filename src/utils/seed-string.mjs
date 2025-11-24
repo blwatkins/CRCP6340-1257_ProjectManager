@@ -29,9 +29,10 @@ export class SeedString {
         const maxValidByte = (Math.floor(256 / alphabet.length) * alphabet.length) - 1;
 
         while (seedString.length < length) {
-            const bytes = crypto.randomBytes(length - seedString.length);
+            const bytesLength = length - seedString.length;
+            const bytes = crypto.randomBytes(bytesLength);
 
-            for (let i = 0; i < (length - seedString.length) && seedString.length < length; i++) {
+            for (let i = 0; i < bytesLength && seedString.length < length; i++) {
                 if (bytes[i] <= maxValidByte) {
                     seedString += alphabet.charAt(bytes[i] % alphabet.length);
                 }

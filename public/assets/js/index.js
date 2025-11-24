@@ -117,15 +117,22 @@
             })
             .catch((error) => {
                 console.error('Error:', error);
-                buildSequenceStatus.innerText = 'Build sequence error.';
-                buildSequenceStatus.classList.add('text-danger');
+                if (buildSequenceStatus) {
+                    buildSequenceStatus.innerText = 'Build sequence error.';
+                    buildSequenceStatus.classList.add('text-danger');
+                }
             })
             .finally(() => {
                 setTimeout(() => {
-                    buildSequenceStatus.innerText = '';
-                    buildSequenceStatus.classList.remove('text-danger');
-                    buildSequenceStatus.classList.remove('text-success');
-                    buildSequenceButton.disabled = false;
+                    if (buildSequenceStatus) {
+                        buildSequenceStatus.innerText = '';
+                        buildSequenceStatus.classList.remove('text-danger');
+                        buildSequenceStatus.classList.remove('text-success');
+                    }
+
+                    if (buildSequenceButton) {
+                        buildSequenceButton.disabled = false;
+                    }
                 }, 10_000);
             });
     }

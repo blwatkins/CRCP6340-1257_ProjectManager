@@ -98,12 +98,15 @@ export class Project {
     }
 
     #loadProjectData() {
-        this.#projectData = JSON.parse(
-            fs.readFileSync(
-                this.#buildPath(this.#PROJECT_DATA_FILENAME),
-                { encoding: 'utf8', flag: 'r' }
-            )
-        );
+        try {
+            this.#projectData = JSON.parse(
+                fs.readFileSync(
+                    this.#buildPath(this.#PROJECT_DATA_FILENAME),
+                    { encoding: 'utf8', flag: 'r' }
+                ));
+        } catch (error) {
+            throw new Error(`Failed to parse project data JSON file '${this.#buildPath(this.#PROJECT_DATA_FILENAME)}': ${error.message}`);
+        }
     }
 
     #getProjectStylesheet(minify = false) {
