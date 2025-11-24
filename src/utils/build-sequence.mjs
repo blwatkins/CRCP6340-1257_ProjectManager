@@ -191,11 +191,19 @@ export class BuildSequence {
 
     #pinHTMLFile(html, filename) {
         const file = new File([html], filename, { type: 'text/html' });
-        return this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
+        const groupId = process.env.PINATA_GROUP_ID;
+        if (!groupId) {
+            throw new Error('Missing required environment variable: PINATA_GROUP_ID');
+        }
+        return this.#PINATA.upload.public.file(file).group(groupId);
     }
 
     #pinImageFile(blob, filename) {
         const file = new File([blob], filename, { type: 'image/png' });
-        return this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
+        const groupId = process.env.PINATA_GROUP_ID;
+        if (!groupId) {
+            throw new Error('Missing required environment variable: PINATA_GROUP_ID');
+        }
+        return this.#PINATA.upload.public.file(file).group(groupId);
     }
 }
