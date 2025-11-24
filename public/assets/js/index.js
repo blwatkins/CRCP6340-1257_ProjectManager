@@ -60,13 +60,19 @@
     function generateSeedString() {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
-        const randomValues = new Uint8Array(20);
-        window.crypto.getRandomValues(randomValues);
-
-        for (let i = 0; i < 20; i++) {
-            seedString += alphabet.charAt(randomValues[i] % alphabet.length);
+        const length = 20;
+        const alphabetLength = alphabet.length;
+        const maxValidByte = Math.floor(256 / alphabetLength) * alphabetLength - 1;
+        while (seedString.length < length) {
+            // Draw random bytes in batches for efficiency
+            const randomValues = new Uint8Array(length);
+            window.crypto.getRandomValues(randomValues);
+            for (let i = 0; i < randomValues.length && seedString.length < length; i++) {
+                if (randomValues[i] <= maxValidByte) {
+                    seedString += alphabet.charAt(randomValues[i] % alphabetLength);
+                }
+            }
         }
-
         return seedString;
     }
 
