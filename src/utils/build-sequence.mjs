@@ -23,11 +23,14 @@
 import fs from 'fs';
 import nodeHtmlToImage from 'node-html-to-image';
 
+import { PromisePool } from '@supercharge/promise-pool';
+
 import { PinataSDK } from 'pinata';
 
 import { Hash } from './hash.mjs';
 import { Project } from './project.mjs';
 import { SeedString } from './seed-string.mjs';
+import { isTruthyString } from './utils.mjs';
 
 export class BuildSequence {
     #BUILD_ANIMATION_FILES_PATH = 'build-steps/02-animation-files';
@@ -46,36 +49,63 @@ export class BuildSequence {
         });
     }
 
+    /**
+     * Executes the full build sequence for the project.
+     *
+     * This method performs the following steps:
+     *   1. Generates and saves animation HTML files for each edition.
+     *   2. Captures thumbnail images from the generated HTML files.
+     *   3. Pins the generated files to IPFS via the Pinata API.
+     *
+     * Side effects:
+     *   - Creates HTML files in the build-steps/02-animation-files directory.
+     *   - Creates PNG thumbnail images in the build-steps/03-thumbnail-images directory.
+     *   - Makes network/API calls to Pinata for IPFS pinning.
+     *
+     * Errors:
+     *   - Throws if file system operations fail (e.g., permission issues, disk full).
+     *   - Throws if network/API calls to Pinata fail.
+     *   - Throws if required environment variables (PINATA_GATEWAY, PINATA_JWT) are missing.
+     *
+     * This method is asynchronous and should be awaited.
+     */
     async completeBuildSequence() {
-        this.#saveAnimationFiles();
+        await this.#saveAnimationFiles();
         await this.#captureThumbnailImages();
         await this.#pinFiles();
     }
 
-    #isTruthyString(input) {
-        return input && typeof input === 'string' && input.trim().length > 0;
-    }
-
     #buildPath(path, filename) {
-        if (!this.#isTruthyString(filename) || !this.#isTruthyString(path)) {
+        if (!isTruthyString(filename) || !isTruthyString(path)) {
             throw new Error('Invalid path or filename');
         }
 
         return `${path}/${filename}`;
     }
 
-    #saveAnimationFiles() {
+    async #saveAnimationFiles() {
         console.log('-- Building animation files...');
+        const promises = [];
 
         for (let i = 0; i < this.#PROJECT.NUMBER_OF_EDITIONS; i++) {
             const tokenSeedString = SeedString.generateSeedString();
             const tokenHash = Hash.getStringHash(tokenSeedString);
             const tokenId = i + 1;
-            const tokenHTML = this.#PROJECT.getProjectHTML(tokenHash, tokenId);
-            const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
-            fs.writeFileSync(animationFilePath, tokenHTML, { encoding: 'utf8', flag: 'w' });
-            console.log(`---- HTML ${animationFilePath} saved successfully.`);
+
+            promises.push(
+                this.#PROJECT.getProjectHTML(tokenHash, tokenId)
+                    .then((tokenHTML) => {
+                        const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
+                        fs.writeFileSync(animationFilePath, tokenHTML, { encoding: 'utf8', flag: 'w' });
+                        console.log(`---- HTML ${animationFilePath} saved successfully.`);
+                    })
+            );
         }
+
+        await PromisePool.for(promises)
+            .process(async (promise) => {
+                await promise;
+            });
     }
 
     async #captureThumbnailImages() {
@@ -94,7 +124,10 @@ export class BuildSequence {
             );
         }
 
-        await Promise.all(promises);
+        await PromisePool.for(promises)
+            .process(async (promise) => {
+                await promise;
+            });
     }
 
     async #saveThumbnail(animationHTML, thumbnailFilePath) {
@@ -107,8 +140,11 @@ export class BuildSequence {
 
     async #pinFiles() {
         console.log('-- Pinning animation files and thumbnail images...');
-
         const promises = [];
+
+        if (!this.#PINATA) {
+            throw new Error('Pinata SDK not initialized');
+        }
 
         for (let i = 0; i < this.#PROJECT.NUMBER_OF_EDITIONS; i++) {
             const tokenId = i + 1;
@@ -116,15 +152,14 @@ export class BuildSequence {
             const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
             const html = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
             const thumbnailBlob = new Blob([fs.readFileSync(thumbnailFilePath, { flag: 'r' })], { type: 'image/png' });
+            this.#IPFS_DATA[tokenId] = {};
 
             promises.push(
                 this.#pinHTMLFile(html, `${tokenId}.html`)
                     .then((upload) => {
-                        if (!this.#IPFS_DATA[tokenId]) {
-                            this.#IPFS_DATA[tokenId] = {};
+                        if (!isTruthyString(this.#IPFS_DATA[tokenId].animationHash)) {
+                            this.#IPFS_DATA[tokenId].animationHash = upload.cid;
                         }
-
-                        this.#IPFS_DATA[tokenId].animationHash = upload.cid;
 
                         console.log(`---- File ${tokenId}.html pinned successfully.`);
                         console.log(`------ IPFS Hash: ${upload.cid}`);
@@ -136,11 +171,9 @@ export class BuildSequence {
             promises.push(
                 this.#pinImageFile(thumbnailBlob, `${tokenId}.png`)
                     .then((upload) => {
-                        if (!this.#IPFS_DATA[tokenId]) {
-                            this.#IPFS_DATA[tokenId] = {};
+                        if (!isTruthyString(this.#IPFS_DATA[tokenId].thumbnailHash)) {
+                            this.#IPFS_DATA[tokenId].thumbnailHash = upload.cid;
                         }
-
-                        this.#IPFS_DATA[tokenId].thumbnailHash = upload.cid;
 
                         console.log(`---- File ${tokenId}.png pinned successfully.`);
                         console.log(`------ IPFS Hash: ${upload.cid}`);
@@ -150,18 +183,19 @@ export class BuildSequence {
             );
         }
 
-        await Promise.all(promises);
+        await PromisePool.for(promises)
+            .process(async (promise) => {
+                await promise;
+            });
     }
 
-    async #pinHTMLFile(html, filename) {
+    #pinHTMLFile(html, filename) {
         const file = new File([html], filename, { type: 'text/html' });
-        const upload = await this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
-        return upload;
+        return this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
     }
 
-    async #pinImageFile(blob, filename) {
+    #pinImageFile(blob, filename) {
         const file = new File([blob], filename, { type: 'image/png' });
-        const upload = await this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
-        return upload;
+        return this.#PINATA.upload.public.file(file).group(process.env.PINATA_GROUP_ID);
     }
 }

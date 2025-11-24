@@ -20,13 +20,16 @@
  * SOFTWARE.
  */
 
+import crypto from 'crypto';
+
 export class SeedString {
     static generateSeedString(length = 20) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
+        const randomBytes = crypto.randomBytes(length);
 
         for (let i = 0; i < length; i++) {
-            seedString += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            seedString += alphabet.charAt(randomBytes[i] % alphabet.length);
         }
 
         return seedString;

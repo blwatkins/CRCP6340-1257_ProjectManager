@@ -23,10 +23,13 @@
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^1.51.1",
+    "@supercharge/promise-pool": "^3.2.0",
+    "csso": "^5.0.5",
     "express": "^5.1.0",
     "jsdom": "^27.2.0",
     "node-html-to-image": "^5.0.0",
-    "pinata": "^2.5.1"
+    "pinata": "^2.5.1",
+    "terser": "^5.44.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

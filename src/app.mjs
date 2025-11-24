@@ -26,17 +26,25 @@ import { BuildSequence } from './utils/build-sequence.mjs';
 import { DEFAULT_SEED_STRING } from './utils/constants.mjs';
 import { Hash } from './utils/hash.mjs';
 import { Project } from './utils/project.mjs';
+import { isTruthyString } from './utils/utils.mjs';
 
 const APP = express();
 const PORT = Number.parseInt(process.env.PORT) || 3000;
 
 APP.use(express.static('public'));
 
-APP.get('/iframe', (request, response) => {
-    let seedString = request.query.seedString || DEFAULT_SEED_STRING;
+APP.get('/iframe', async (request, response) => {
+    let seedString;
+
+    if (isTruthyString(request.query.seedString)) {
+        seedString = request.query.seedString;
+    } else {
+        seedString = DEFAULT_SEED_STRING;
+    }
+
     let hash = Hash.getStringHash(seedString);
     const preview = new Project();
-    const iframeString = preview.getProjectHTML(hash);
+    const iframeString = await preview.getProjectHTML(hash);
     response.send(iframeString);
 });
 

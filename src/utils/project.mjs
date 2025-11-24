@@ -23,8 +23,12 @@
 import fs from 'fs';
 import jsdom from 'jsdom';
 
+import { minify as cssMinify } from 'csso';
+import { minify } from 'terser';
+
 import { DEFAULT_SEED_STRING } from './constants.mjs';
 import { Hash } from './hash.mjs';
+import { isTruthyString } from './utils.mjs';
 
 const { JSDOM } = jsdom;
 
@@ -48,95 +52,14 @@ export class Project {
         return 10;
     }
 
-    #isTruthyString(input) {
-        return input && typeof input === 'string' && input.trim().length > 0;
-    }
-
-    #buildPath(filename) {
-        if (!this.#isTruthyString(filename) || !this.#isTruthyString(this.#PROJECT_BUNDLE_DIR)) {
-            throw new Error('Invalid project bundle directory or filename');
-        }
-
-        return `${this.#PROJECT_BUNDLE_DIR}/${filename}`;
-    }
-
-    #loadProjectData() {
-        try {
-            this.#projectData = JSON.parse(
-                fs.readFileSync(
-                    this.#buildPath(this.#PROJECT_DATA_FILENAME),
-                    { encoding: 'utf8', flag: 'r' }
-                ));
-        } catch (error) {
-            console.error('Error reading project data file:', error);
-
-            this.#projectData = {
-                name: 'Default Project Name',
-                artist: 'Default Artist Name'
-            };
-        }
-    }
-
-    #getProjectStylesheet(minimize = false) {
-        let content = '';
-
-        try {
-            const fileContents = fs.readFileSync(this.#buildPath(this.#PROJECT_STYLESHEET_FILENAME), { encoding: 'utf8', flag: 'r' });
-
-            if (minimize) {
-                content = fileContents.split('\n').map(line => line.trim()).join(' ');
-            } else {
-                content = fileContents;
-            }
-        } catch (error) {
-            console.error('Error reading file:', error);
-        }
-
-        return content;
-    }
-
-    #getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
-        return {
-            tokenHash: tokenHash,
-            tokenID: tokenID,
-            projectName: this.#projectData.name,
-            artistName: this.#projectData.artist,
-            properties: { placeholder: 'property placeholder' },
-            toData: { placeholder: 'toData placeholder' }
-        };
-    }
-
-    #getHashSeededRandomScript(minimize = false) {
-        let content = '';
-
-        try {
-            const fileContents = fs.readFileSync(this.#buildPath(this.#HASH_SEEDED_RANDOM_FILENAME), { encoding: 'utf8', flag: 'r' });
-
-            if (minimize) {
-                content = fileContents.split('\n').map(line => line.trim()).join(' ');
-            } else {
-                content = fileContents;
-            }
-        } catch (error) {
-            console.error('Error reading file:', error);
-        }
-
-        return content;
-    }
-
-    #getProjectBundle() {
-        let content = '';
-
-        try {
-            content = fs.readFileSync(this.#buildPath(this.#PROJECT_BUNDLE_FILENAME), { encoding: 'utf8', flag: 'r' });
-        } catch (error) {
-            console.error('Error reading file:', error);
-        }
-
-        return content;
-    }
-
-    getProjectHTML(tokenHash = DEFAULT_HASH, tokenId = -1) {
+    /**
+     * Generates the complete HTML for the project, including metadata, styles, and scripts.
+     *
+     * @param {string} tokenHash - The hash string representing the token's unique seed. Defaults to DEFAULT_HASH.
+     * @param {number} tokenId - The numeric identifier for the token edition. Defaults to -1.
+     * @returns {string} A serialized HTML string containing the project title, stylesheet, token data, hash-seeded random script, and project bundle script.
+     */
+    async getProjectHTML(tokenHash = DEFAULT_HASH, tokenId = -1) {
         const DOM = new JSDOM();
         const document = DOM.window.document;
 
@@ -155,7 +78,7 @@ export class Project {
 
         const hashSeededRandomScript = document.createElement('script');
         hashSeededRandomScript.id = 'hash-seeded-random';
-        hashSeededRandomScript.text = this.#getHashSeededRandomScript(true);
+        hashSeededRandomScript.text = await this.#getHashSeededRandomScript(true);
         document.body.appendChild(hashSeededRandomScript);
 
         const projectBundleScript = document.createElement('script');
@@ -164,5 +87,65 @@ export class Project {
         document.body.appendChild(projectBundleScript);
 
         return DOM.serialize();
+    }
+
+    #buildPath(filename) {
+        if (!isTruthyString(filename) || !isTruthyString(this.#PROJECT_BUNDLE_DIR)) {
+            throw new Error('Invalid project bundle directory or filename');
+        }
+
+        return `${this.#PROJECT_BUNDLE_DIR}/${filename}`;
+    }
+
+    #loadProjectData() {
+        this.#projectData = JSON.parse(
+            fs.readFileSync(
+                this.#buildPath(this.#PROJECT_DATA_FILENAME),
+                { encoding: 'utf8', flag: 'r' }
+            )
+        );
+    }
+
+    #getProjectStylesheet(minimize = false) {
+        let content;
+        const fileContents = fs.readFileSync(this.#buildPath(this.#PROJECT_STYLESHEET_FILENAME), { encoding: 'utf8', flag: 'r' });
+
+        if (minimize) {
+            const minified = cssMinify(fileContents);
+            content = minified.css;
+        } else {
+            content = fileContents;
+        }
+
+        return content;
+    }
+
+    #getTokenData(tokenHash = DEFAULT_HASH, tokenID = -1) {
+        return {
+            tokenHash: tokenHash,
+            tokenID: tokenID,
+            projectName: this.#projectData.name,
+            artistName: this.#projectData.artist,
+            properties: { placeholder: 'property placeholder' },
+            toData: { placeholder: 'toData placeholder' }
+        };
+    }
+
+    async #getHashSeededRandomScript(minimize = false) {
+        let content;
+        const fileContents = fs.readFileSync(this.#buildPath(this.#HASH_SEEDED_RANDOM_FILENAME), { encoding: 'utf8', flag: 'r' });
+
+        if (minimize) {
+            const minified = await minify(fileContents);
+            content = minified.code;
+        } else {
+            content = fileContents;
+        }
+
+        return content;
+    }
+
+    #getProjectBundle() {
+        return fs.readFileSync(this.#buildPath(this.#PROJECT_BUNDLE_FILENAME), { encoding: 'utf8', flag: 'r' });
     }
 }

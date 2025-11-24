@@ -20,4 +20,6 @@
  * SOFTWARE.
  */
 
-export const DEFAULT_SEED_STRING = '1234567890abcdefghij';
+export function isTruthyString(input) {
+    return input && typeof input === 'string' && input.trim().length > 0;
+}

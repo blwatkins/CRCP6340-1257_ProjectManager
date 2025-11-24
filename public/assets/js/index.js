@@ -60,9 +60,11 @@
     function generateSeedString() {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
+        const randomValues = new Uint8Array(20);
+        window.crypto.getRandomValues(randomValues);
 
         for (let i = 0; i < 20; i++) {
-            seedString += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            seedString += alphabet.charAt(randomValues[i] % alphabet.length);
         }
 
         return seedString;
