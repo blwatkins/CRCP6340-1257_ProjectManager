@@ -150,11 +150,12 @@ export class BuildSequence {
             data[tokenId] = { html: html, thumbnailBlob: thumbnailBlob };
         }
 
-        await PromisePool.for(data.map(([tokenId, data]) => ({ tokenId, ...data })))
-            .process(async (data) => {
-                const tokenId = data.tokenId;
-                const html = data.html;
-                const thumbnailBlob = data.thumbnailBlob;
+        await PromisePool.for(Object.keys(data))
+            .process(async (key) => {
+                const tokenId = key;
+                const tokenData = data[tokenId];
+                const html = tokenData.html;
+                const thumbnailBlob = tokenData.thumbnailBlob;
 
                 await this.#pinHTMLFile(html, `${tokenId}.html`)
                     .then((upload) => {
