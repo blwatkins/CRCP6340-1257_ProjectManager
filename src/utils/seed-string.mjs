@@ -26,15 +26,16 @@ export class SeedString {
     static generateSeedString(length = 20) {
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
-        let generated = 0;
+        const maxValidByte = (Math.floor(256 / alphabet.length) * alphabet.length) - 1;
 
-        while (generated < length) {
-            const byte = crypto.randomBytes(1)[0];
-            if (byte >= Math.floor(256 / alphabet.length) * alphabet.length) {
-                continue;
+        while (seedString.length < length) {
+            const bytes = crypto.randomBytes(length - seedString.length);
+
+            for (let i = 0; i < (length - seedString.length) && seedString.length < length; i++) {
+                if (bytes[i] <= maxValidByte) {
+                    seedString += alphabet.charAt(bytes[i] % alphabet.length);
+                }
             }
-            seedString += alphabet.charAt(byte % alphabet.length);
-            generated++;
         }
 
         return seedString;

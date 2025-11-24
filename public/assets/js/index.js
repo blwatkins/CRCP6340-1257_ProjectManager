@@ -61,18 +61,19 @@
         const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let seedString = '';
         const length = 20;
-        const alphabetLength = alphabet.length;
-        const maxValidByte = Math.floor(256 / alphabetLength) * alphabetLength - 1;
+        const maxValidByte = (Math.floor(256 / alphabet.length) * alphabet.length) - 1;
+
         while (seedString.length < length) {
-            // Draw random bytes in batches for efficiency
-            const randomValues = new Uint8Array(length);
+            const randomValues = new Uint8Array(length - seedString.length);
             window.crypto.getRandomValues(randomValues);
+
             for (let i = 0; i < randomValues.length && seedString.length < length; i++) {
                 if (randomValues[i] <= maxValidByte) {
-                    seedString += alphabet.charAt(randomValues[i] % alphabetLength);
+                    seedString += alphabet.charAt(randomValues[i] % alphabet.length);
                 }
             }
         }
+
         return seedString;
     }
 

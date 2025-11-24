@@ -85,48 +85,42 @@ export class BuildSequence {
 
     async #saveAnimationFiles() {
         console.log('-- Building animation files...');
-        const promises = [];
+        const data = [];
 
         for (let i = 0; i < this.#PROJECT.NUMBER_OF_EDITIONS; i++) {
             const tokenSeedString = SeedString.generateSeedString();
             const tokenHash = Hash.getStringHash(tokenSeedString);
             const tokenId = i + 1;
-
-            promises.push(
-                this.#PROJECT.getProjectHTML(tokenHash, tokenId)
-                    .then((tokenHTML) => {
-                        const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
-                        fs.writeFileSync(animationFilePath, tokenHTML, { encoding: 'utf8', flag: 'w' });
-                        console.log(`---- HTML ${animationFilePath} saved successfully.`);
-                    })
-            );
+            data.push({ tokenHash: tokenHash, tokenId: tokenId });
         }
 
-        await PromisePool.for(promises)
-            .process(async (promise) => {
-                await promise;
+        await PromisePool.for(data)
+            .process(async (data) => {
+                await this.#PROJECT.getProjectHTML(data.tokenHash, data.tokenId)
+                    .then((tokenHTML) => {
+                        const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${data.tokenId}.html`);
+                        fs.writeFileSync(animationFilePath, tokenHTML, { encoding: 'utf8', flag: 'w' });
+                        console.log(`---- HTML ${animationFilePath} saved successfully.`);
+                    });
             });
     }
 
     async #captureThumbnailImages() {
         console.log('-- Capturing thumbnail images...');
-        const promises = [];
+        const data = [];
 
         for (let i = 0; i < this.#PROJECT.NUMBER_OF_EDITIONS; i++) {
             const tokenId = i + 1;
             const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
             const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
             const animationHTML = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
-
-            promises.push(
-                this.#saveThumbnail(animationHTML, thumbnailFilePath)
-                    .then(() => console.log(`---- Thumbnail ${thumbnailFilePath} captured successfully.`))
-            );
+            data.push({ animationHTML: animationHTML, thumbnailFilePath: thumbnailFilePath });
         }
 
-        await PromisePool.for(promises)
-            .process(async (promise) => {
-                await promise;
+        await PromisePool.for(data)
+            .process(async (data) => {
+                await this.#saveThumbnail(data.animationHTML, data.thumbnailFilePath)
+                    .then(() => console.log(`---- Thumbnail ${data.thumbnailFilePath} captured successfully.`));
             });
     }
 
@@ -140,7 +134,7 @@ export class BuildSequence {
 
     async #pinFiles() {
         console.log('-- Pinning animation files and thumbnail images...');
-        const promises = [];
+        const data = [];
 
         if (!this.#PINATA) {
             throw new Error('Pinata SDK not initialized');
@@ -153,57 +147,65 @@ export class BuildSequence {
             const html = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
             const thumbnailBlob = new Blob([fs.readFileSync(thumbnailFilePath, { flag: 'r' })], { type: 'image/png' });
             this.#IPFS_DATA[tokenId] = {};
-
-            promises.push(
-                this.#pinHTMLFile(html, `${tokenId}.html`)
-                    .then((upload) => {
-                        if (!isTruthyString(this.#IPFS_DATA[tokenId].animationHash)) {
-                            this.#IPFS_DATA[tokenId].animationHash = upload.cid;
-                        }
-
-                        console.log(`---- File ${tokenId}.html pinned successfully.`);
-                        console.log(`------ IPFS Hash: ${upload.cid}`);
-                        console.log(`------ Gateway URL: https://${process.env.PINATA_GATEWAY}/ipfs/${upload.cid}`);
-                        console.log(`------ IPFS URL: https://ipfs.io/ipfs/${upload.cid}`);
-                    })
-            );
-
-            promises.push(
-                this.#pinImageFile(thumbnailBlob, `${tokenId}.png`)
-                    .then((upload) => {
-                        if (!isTruthyString(this.#IPFS_DATA[tokenId].thumbnailHash)) {
-                            this.#IPFS_DATA[tokenId].thumbnailHash = upload.cid;
-                        }
-
-                        console.log(`---- File ${tokenId}.png pinned successfully.`);
-                        console.log(`------ IPFS Hash: ${upload.cid}`);
-                        console.log(`------ Gateway URL: https://${process.env.PINATA_GATEWAY}/ipfs/${upload.cid}`);
-                        console.log(`------ IPFS URL: https://ipfs.io/ipfs/${upload.cid}`);
-                    })
-            );
+            data.push({ tokenId: tokenId, html: html });
+            data.push({ tokenId: tokenId, thumbnailBlob: thumbnailBlob });
         }
 
-        await PromisePool.for(promises)
-            .process(async (promise) => {
-                await promise;
+        await PromisePool.for(data)
+            .process(async (data) => {
+                if (data.html) {
+                    const html = data.html;
+                    const tokenId = data.tokenId;
+
+                    await this.#pinHTMLFile(html, `${tokenId}.html`)
+                        .then((upload) => {
+                            if (!isTruthyString(this.#IPFS_DATA[tokenId].animationHash)) {
+                                this.#IPFS_DATA[tokenId].animationHash = upload.cid;
+                            }
+
+                            console.log(`---- File ${tokenId}.html pinned successfully.`);
+                            console.log(`------ IPFS Hash: ${upload.cid}`);
+                            console.log(`------ Gateway URL: https://${process.env.PINATA_GATEWAY}/ipfs/${upload.cid}`);
+                            console.log(`------ IPFS URL: https://ipfs.io/ipfs/${upload.cid}`);
+                        });
+                } else if (data.thumbnailBlob) {
+                    const thumbnailBlob = data.thumbnailBlob;
+                    const tokenId = data.tokenId;
+
+                    await this.#pinImageFile(thumbnailBlob, `${tokenId}.png`)
+                        .then((upload) => {
+                            if (!isTruthyString(this.#IPFS_DATA[tokenId].thumbnailHash)) {
+                                this.#IPFS_DATA[tokenId].thumbnailHash = upload.cid;
+                            }
+
+                            console.log(`---- File ${tokenId}.png pinned successfully.`);
+                            console.log(`------ IPFS Hash: ${upload.cid}`);
+                            console.log(`------ Gateway URL: https://${process.env.PINATA_GATEWAY}/ipfs/${upload.cid}`);
+                            console.log(`------ IPFS URL: https://ipfs.io/ipfs/${upload.cid}`);
+                        });
+                }
             });
     }
 
     #pinHTMLFile(html, filename) {
         const file = new File([html], filename, { type: 'text/html' });
         const groupId = process.env.PINATA_GROUP_ID;
+
         if (!groupId) {
             throw new Error('Missing required environment variable: PINATA_GROUP_ID');
         }
+
         return this.#PINATA.upload.public.file(file).group(groupId);
     }
 
     #pinImageFile(blob, filename) {
         const file = new File([blob], filename, { type: 'image/png' });
         const groupId = process.env.PINATA_GROUP_ID;
+
         if (!groupId) {
             throw new Error('Missing required environment variable: PINATA_GROUP_ID');
         }
+
         return this.#PINATA.upload.public.file(file).group(groupId);
     }
 }
