@@ -29,6 +29,7 @@
     const PROJECT_PREVIEW_FRAME_ID = 'project-preview-frame';
     const BUILD_SEQUENCE_BUTTON_ID = 'build-sequence-button';
     const BUILD_SEQUENCE_STATUS_ID = 'build-sequence-status';
+    const STATUS_DISPLAY_DURATION_MS = 10_000;
 
     function updateIFrameSource(seedString) {
         let frameSource = '/iframe';
@@ -103,8 +104,8 @@
                 if (response.ok) {
                     response.json()
                         .then((data) => {
-                            if (buildSequenceStatus) {
-                                buildSequenceStatus.innerText = data.result;
+                            if (buildSequenceStatus && data.success) {
+                                buildSequenceStatus.innerText = data.message;
                                 buildSequenceStatus.classList.add('text-success');
                             }
                         });
@@ -133,7 +134,7 @@
                     if (buildSequenceButton) {
                         buildSequenceButton.disabled = false;
                     }
-                }, 10_000);
+                }, STATUS_DISPLAY_DURATION_MS);
             });
     }
 

@@ -36,7 +36,7 @@ APP.use(express.static('public'));
 APP.get('/iframe', async (request, response) => {
     let seedString;
 
-    if (isTruthyString(request.query.seedString)) {
+    if (isTruthyString(request.query.seedString) && request.query.seedString.length <= 64) {
         seedString = request.query.seedString;
     } else {
         seedString = DEFAULT_SEED_STRING;
@@ -55,10 +55,10 @@ APP.post('/build-sequence', async (request, response) => {
     try {
         await build.completeBuildSequence();
         console.log('Build sequence complete!');
-        response.send({ result: 'Build sequence complete!' });
+        response.send({ success: true, message: 'Build sequence complete!' });
     } catch (error) {
         console.error('Error during build sequence:', error);
-        response.status(500).send({ result: 'Build sequence error.' });
+        response.status(500).send({ success: false, message: 'Build sequence error.' });
     }
 });
 

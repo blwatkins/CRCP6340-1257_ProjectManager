@@ -68,6 +68,8 @@ export class BuildSequence {
      *   - Throws if required environment variables (PINATA_GATEWAY, PINATA_JWT) are missing.
      *
      * This method is asynchronous and should be awaited.
+     *
+     * @returns {Promise<void>}
      */
     async completeBuildSequence() {
         await this.#saveAnimationFiles();
