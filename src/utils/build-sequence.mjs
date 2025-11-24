@@ -113,7 +113,7 @@ export class BuildSequence {
         const promises = [];
 
         for (let i = 0; i < this.#PROJECT.NUMBER_OF_EDITIONS; i++) {
-            let tokenId = i + 1;
+            const tokenId = i + 1;
             const animationFilePath = this.#buildPath(this.#BUILD_ANIMATION_FILES_PATH, `${tokenId}.html`);
             const thumbnailFilePath = this.#buildPath(this.#THUMBNAIL_IMAGES_PATH, `${tokenId}.png`);
             const animationHTML = fs.readFileSync(animationFilePath, { encoding: 'utf8', flag: 'r' });
