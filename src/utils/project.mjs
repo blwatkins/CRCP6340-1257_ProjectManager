@@ -131,7 +131,7 @@ export class Project {
         const fileContents = fs.readFileSync(this.#buildPath(this.#HASH_SEEDED_RANDOM_FILENAME), { encoding: 'utf8', flag: 'r' });
 
         if (minify) {
-            return await jsMinify(fileContents).code;
+            return (await jsMinify(fileContents)).code;
         } else {
             return fileContents;
         }
