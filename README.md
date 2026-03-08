@@ -1,3 +1,6 @@
+> [!CAUTION]
+> # This repository has been archived.
+
 # CRCP 6340 - ProjectManager (Fall 2025)
 
 Brittni's implementation of the project manager for CRCP 6340; Fall 2025 term.
